@@ -1,0 +1,65 @@
+plugins:
+  - serverless-finch
+
+custom:
+  client:
+    bucketName: moshea-serverlessjam
+    distributionFolder: frontend
+    indexDocument: index.html
+    errorDocument: index.html
+
+service: serverlessjams
+# app and org for use with dashboard.serverless.com
+#app: your-app-name
+#org: your-org-name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  region: us-west-2
+  runtime: python3.8
+  environment:
+    DYNAMODB_TABLE: serverlessjams-voteCounts
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - dynamodb:Scan
+        - dynamodb:UpdateItem
+        - dynamodb:PutItem
+      Resource: "arn:aws:dynamodb:*:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+functions:
+  recordSongVote:
+    handler: backend/record_song_vote.handler
+    events:
+      - http:
+          path: song/vote
+          method: post
+          cors: true
+  getSongVoteCounts:
+    handler: backend/get_song_vote_counts.handler
+    events:
+      - http:
+          path: votes
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    songsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: songName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: songName
+            KeyType: HASH
+        ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+
