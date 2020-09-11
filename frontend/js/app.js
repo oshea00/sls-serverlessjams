@@ -2,8 +2,10 @@ $(document).ready(function(){
     $('.ui.dropdown').dropdown();  
     refreshVoteCounts()
     document.getElementsByClassName("ui red button")[0].addEventListener("click", recordVote);
+    document.getElementsByClassName("ui green button")[0].addEventListener("click", callAPI);
 });
 
+var api_endpoint = "https://lambdaalb.limpidfox.com"
 var vote_endpoint = "https://65qyq9ml84.execute-api.us-west-2.amazonaws.com/dev/song/vote"
 var get_votes_endpoint = "https://65qyq9ml84.execute-api.us-west-2.amazonaws.com/dev/votes"
 
@@ -42,6 +44,21 @@ async function voteForSong(songName) {
     })
     const result_json = await response.json()
     setVotes(songName, result_json["votes"])
+}
+
+async function callAPI() {
+  const id_token = await auth0.getTokenSilently();
+  console.log(id_token)
+  const response = await fetch(api_endpoint, {
+      method: "GET",
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + id_token
+      }
+  })
+  const result_json = await response.json()
+  console.log(result_json);
 }
 
 function recordVote() {
